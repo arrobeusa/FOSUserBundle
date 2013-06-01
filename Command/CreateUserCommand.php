@@ -36,6 +36,7 @@ class CreateUserCommand extends ContainerAwareCommand
                 new InputArgument('username', InputArgument::REQUIRED, 'The username'),
                 new InputArgument('email', InputArgument::REQUIRED, 'The email'),
                 new InputArgument('password', InputArgument::REQUIRED, 'The password'),
+                new InputArgument('type', InputArgument::REQUIRED, 'The user type'),
                 new InputOption('super-admin', null, InputOption::VALUE_NONE, 'Set the user as super admin'),
                 new InputOption('inactive', null, InputOption::VALUE_NONE, 'Set the user as inactive'),
             ))
@@ -70,11 +71,12 @@ EOT
         $username   = $input->getArgument('username');
         $email      = $input->getArgument('email');
         $password   = $input->getArgument('password');
+        $type       = $input->getArgument('type');
         $inactive   = $input->getOption('inactive');
         $superadmin = $input->getOption('super-admin');
 
         $manipulator = $this->getContainer()->get('fos_user.util.user_manipulator');
-        $manipulator->create($username, $password, $email, !$inactive, $superadmin);
+        $manipulator->create($username, $password, $email, $type, !$inactive, $superadmin);
 
         $output->writeln(sprintf('Created user <comment>%s</comment>', $username));
     }
@@ -128,5 +130,21 @@ EOT
             );
             $input->setArgument('password', $password);
         }
+        
+        if (!$input->getArgument('type')) {
+            $type = $this->getHelper('dialog')->askAndValidate(
+                $output,
+                'Please choose a type:',
+                function($type) {
+                    if (empty($type)) {
+                        throw new \Exception('Type can not be empty');
+                    }
+
+                    return $type;
+                }
+            );
+            $input->setArgument('type', $type);
+        }
+        
     }
 }
