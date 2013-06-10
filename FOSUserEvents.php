@@ -120,6 +120,8 @@ final class FOSUserEvents
      */
     const PROFILE_EDIT_COMPLETED = 'fos_user.profile.edit.completed';
 
+    const REGISTRATION_PRE_INITIALIZE = 'fos_user.registration.pre_initialize'; 
+
     /**
      * The REGISTRATION_INITIALIZE event occurs when the registration process is initialized.
      *

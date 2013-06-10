@@ -23,6 +23,13 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use FOS\UserBundle\Model\UserInterface;
 
+
+use PLZ\MainBundle\Document\User\User;
+use PLZ\MainBundle\Document\User\VendorType;
+use PLZ\MainBundle\Document\User\MarketerType;
+use PLZ\MainBundle\Exceptions\InvalidInvitationException;
+
+
 /**
  * Controller managing the registration
  *
@@ -39,14 +46,21 @@ class RegistrationController extends ContainerAware
         $userManager = $this->container->get('fos_user.user_manager');
         /** @var $dispatcher \Symfony\Component\EventDispatcher\EventDispatcherInterface */
         $dispatcher = $this->container->get('event_dispatcher');
-
+        
         $user = $userManager->createUser();
-        $user->setEnabled(true);
+        
+        // dispatch a pre-init event that will allow listerners to modify the user
+        $userEvent = new UserEvent($user, $request);
+        $dispatcher->dispatch(FOSUserEvents::REGISTRATION_PRE_INITIALIZE, $userEvent);
+        
+        // get the user from the event just in case it was changed in pre init
+        $user = $userEvent->getUser();
+        $user->setEnabled(true);        
 
-        $dispatcher->dispatch(FOSUserEvents::REGISTRATION_INITIALIZE, new UserEvent($user, $request));
-
+        $dispatcher->dispatch(FOSUserEvents::REGISTRATION_INITIALIZE, $userEvent);
+        
         $form = $formFactory->createForm();
-        $form->setData($user);
+        $form->setData($userEvent->getUser());
 
         if ('POST' === $request->getMethod()) {
             $form->bind($request);
